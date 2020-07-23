@@ -1,0 +1,9 @@
+# Ignore all Swap files
+*.swp
+
+# Ignore all the logs
+*.log
+
+
+
+
