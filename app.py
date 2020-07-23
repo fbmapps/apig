@@ -29,7 +29,7 @@ from halo import Halo
 
 # ======== Custom Library =============
 # from bot import techxbot
-# from apig.apigserver import app
+from apigw.apigwserver import app
 # ============= Set Logger ================
 logger = logging.getLogger("apigLogger.MAIN")
 
@@ -53,7 +53,7 @@ if __name__ == "__main__":
         spinner.succeed(text="API Gateway is running")
         port = int(os.environ.get("PORT", 5105))
         logger.info("API Gateway started Sucessfully!!")
-        # app.run(host='0.0.0.0',port=port,debug=True)
+        app.run(host='0.0.0.0', port=port, debug=True)
         logger.info("API Gateway Stopped")
     except Exception as err:
         spinner.fail(text="API Gateway fails")
