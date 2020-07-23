@@ -4,6 +4,8 @@
 # Ignore all the logs
 *.log
 
-
+# Ignore pycache
+*.pyc
+__pycache__
 
 
