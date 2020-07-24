@@ -15,6 +15,9 @@ TODO
 
 TODO
 
+## Docker
+docker-compose build && docker-compose up -d
+Exposed in port 5105
 
 ### Release
 
