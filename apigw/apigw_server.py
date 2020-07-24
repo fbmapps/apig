@@ -18,9 +18,10 @@ __license__ = "MIT"
 # import sys
 import logging
 # ========= Microframework ===========
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 # ==== Custom Libraries ===========
 # import apigw.apigwlogger
+from apigw.apigw_webex import *
 # ==== Flask Instance =============
 app = Flask(__name__)
 
@@ -38,3 +39,13 @@ def homepage():
     """
     logger.info('Request Served')
     return body
+
+@app.route('/', methods=['POST'])
+def flask_webex_bot():
+    '''
+    Entry Point for Message from Webex Team CallBack
+    '''
+    payload = request.json
+    the_response = apigw_webex_listener(payload)
+
+    return jsonify(the_response)

@@ -17,7 +17,7 @@ import os
 
 # ==== Load ENV Variables ===
 meraki_api_token = str(os.environ['MERAKI_API_KEY'])
-webext_access_token = str(os.environ['WEBEXT_ACCESS_TOKEN'])
+webext_access_token = str(os.environ['WEBEX_TEAMS_ACCESS_TOKEN'])
 
 # ==== General Functions ===
 def apigw_meraki_enable():
