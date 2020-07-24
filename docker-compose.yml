@@ -5,10 +5,12 @@ services:
       context: .
       dockerfile: Dockerfile
     restart: unless-stopped
-    dns: 
+    dns:
+     - 8.8.8.8
+     - 8.8.4.4       
      - 208.67.222.222
      - 208.67.220.220  
-    environment:
+    env_file:
      - .env
     ports:
      - "5105:5105"       
