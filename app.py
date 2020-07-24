@@ -30,8 +30,9 @@ from halo import Halo
 # ======== Custom Library =============
 # from bot import techxbot
 from apigw.apigwserver import app
+import apigw.apigwlogger
 # ============= Set Logger ================
-logger = logging.getLogger("apigLogger.MAIN")
+logger = logging.getLogger("apigw.MAIN")
 
 
 def splash_screen():
