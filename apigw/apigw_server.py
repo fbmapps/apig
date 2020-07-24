@@ -18,7 +18,7 @@ __license__ = "MIT"
 # import sys
 import logging
 # ========= Microframework ===========
-from flask import Flask
+from flask import Flask, jsonify
 # ==== Custom Libraries ===========
 # import apigw.apigwlogger
 # ==== Flask Instance =============
