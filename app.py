@@ -29,8 +29,8 @@ from halo import Halo
 
 # ======== Custom Library =============
 # from bot import techxbot
-from apigw.apigwserver import app
-import apigw.apigwlogger
+from apigw.apigw_server import app
+import apigw.apigw_logger
 # ============= Set Logger ================
 logger = logging.getLogger("apigw.MAIN")
 
