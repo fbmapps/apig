@@ -1,0 +1,14 @@
+version: '3.8'
+services:
+  techx_apigw:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    dns: 
+     - 208.67.222.222
+     - 208.67.220.220  
+    environment:
+     - .env
+    ports:
+     - "5105:5105"       

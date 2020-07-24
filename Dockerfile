@@ -1,7 +1,5 @@
 FROM python:3.6
 
-LABEL "maintainer FRBELLO AT CISCO DOT COM"
-
 WORKDIR /app
 
 COPY requirements.txt ./
