@@ -51,6 +51,7 @@ def flask_webex_bot():
     Entry Point for Message from Webex Team CallBack
     """
     payload = request.json
+    logger.info("Webex Team resource : %s " , payload['resource'])
     the_response = apigw_webex_listener(payload)
 
     return jsonify(the_response)

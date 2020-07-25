@@ -13,7 +13,6 @@ __license__ = "MIT"
 
 # ==== Libraries ====
 import os
-import json
 import logging
 from webexteamssdk import WebexTeamsAPI, WebhookEvent, ApiError
 
@@ -21,7 +20,8 @@ from webexteamssdk import WebexTeamsAPI, WebhookEvent, ApiError
 from apigw.apigw_dispatcher import APIGWDispatcher
 from apigw.apigw_generic import webex_teams_enable
 from apigw.apigw_misc import CovidStats
-from apigw.apigw_card import meraki_form
+from apigw.apigw_card import meraki_form, simple_form
+
 # ==== Create a Logger ======
 logger = logging.getLogger("apigw.WebexTeams")
 
@@ -121,12 +121,13 @@ def apigw_send_message(webex_bot, room_id, message, card=None):
     try:
         if card is None:
             webex_bot.messages.create(room_id, markdown=message)
-        else:    
+        else:
             webex_bot.messages.create(room_id, text=message, atachments=card)
         delivery_status = True
     except ApiError:
         delivery_status = False
     return delivery_status
+
 
 def get_health(message):
     """
@@ -141,11 +142,20 @@ def get_health(message):
         health_check = " Webex Teams Comm is not working :("
     return health_check
 
+
 def send_card(message):
     """
     Send an AdaptiveCard
     """
     return meraki_form
+
+
+def simple_card(message):
+    """
+        Send an AdaptiveCard
+        """
+    return simple_form
+
 
 # Generic Action Registrar
 def apigw_actions_builder(dispatcher):
@@ -163,19 +173,14 @@ def apigw_actions_builder(dispatcher):
         dispatcher.add_action(
             "webex-health", "Get Health of Webex Teams Link", get_health
         )
-        dispatcher.add_action(
-                "send-card",
-                "Send Meraki Form",
-                send_card
-                )
+        dispatcher.add_action("send-card", "Send Meraki Form", send_card)
+        dispatcher.add_action("simple-card", "Adaptive Card Simple form", simple_card)
 
         action_builder = True
 
     # Sample Service
     covid = CovidStats()
     dispatcher.add_action(
-            "covid-info" , 
-            "Latest-Covid Information", 
-            covid.get_covid_summary
-            )
+        "covid-info", "Latest-Covid Information", covid.get_covid_summary
+    )
     return action_builder
