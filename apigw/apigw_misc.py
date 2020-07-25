@@ -6,7 +6,6 @@ DATE : JUL 2020
 VERSION: 1.0
 STATE: RC2
 """
-
 __author__ = "Freddy Bello"
 __author_email__ = "frbello@cisco.com"
 __copyright__ = "Copyright (c) 2016-2020 Cisco and/or its affiliates."
@@ -17,8 +16,9 @@ import json
 import logging
 import requests
 
+# ===== APIGW Libraries =======
 # ==== Create a Logger ===
-logger = logging.getLogger('apigw.GENERIC')
+logger = logging.getLogger("apigw.COVID")
 
 # ==== Class Blueprint ===
 class CovidStats:
@@ -28,6 +28,7 @@ class CovidStats:
     """
 
     def __init__(self):
+        logger.info("A New COVID Services Object created")
         self.api_url = "https://api.covid19api.com"
 
     def query_api(self, enpoint):
@@ -39,14 +40,23 @@ class CovidStats:
             rx_answer = requests.get(url, verify=False)
             resp = json.loads(rx_answer.text)
         except requests.exceptions.RequestException as err:
-            logger.error('API Request failes : %s', err)
+            logger.error("API Request failes : %s", err)
             resp = {}
         return resp
 
-    def get_covid_summary(self):
+    def get_covid_summary(self, message):
         """
         Get Latest Info about Covid
         """
+        logger.info("Action Request from bot for COVID Data : %s", message)
         endpoint = "/summary"
         data = self.query_api(endpoint)
-        return data
+        datapoint = str(data["Global"]["NewConfirmed"])
+        reply = f"""
+                 Here is the Latest COVID from Jhon Hopskin Data: \n
+                 * **{datapoint}** new confirmed cases \n
+                 * **{data["Global"]["TotalDeaths"]}** Deaths \n
+                 * **{data["Global"]["TotalRecovered"]}** recovered \n
+                 * **{data["Global"]["TotalConfirmed"]}** cases World-wide
+                 """
+        return reply

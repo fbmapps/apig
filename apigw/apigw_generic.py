@@ -20,7 +20,7 @@ meraki_api_token = str(os.environ['MERAKI_API_KEY'])
 webext_access_token = str(os.environ['WEBEX_TEAMS_ACCESS_TOKEN'])
 
 # ==== General Functions ===
-def apigw_meraki_enable():
+def meraki_api_enable():
     '''
     Validate if Meraki API Token is present
     '''
@@ -31,7 +31,7 @@ def apigw_meraki_enable():
 
     return False
 
-def apigw_webext_enable():
+def webex_teams_enable():
     '''
     Validate Webex Teams Bot requires data is present
     '''

@@ -18,6 +18,8 @@ from webexteamssdk import WebexTeamsAPI, WebhookEvent, ApiError
 
 # ==== Custom APIGW Libraries ====
 from apigw.apigw_dispatcher import APIGWDispatcher
+from apigw.apigw_generic import webex_teams_enable
+from apigw.apigw_misc import CovidStats
 
 # ==== Create a Logger ======
 logger = logging.getLogger("apigw.WebexTeams")
@@ -37,9 +39,21 @@ def apigw_webex_listener(payload):
         response = {"status_code": 400, "status_info": "No a Valid Room"}
         return response
 
-    # If Room is a valid source, then Instatiate the APIG
+    # If Room is a valid source, then Instatiate the APIG Create all the Objects
     webex_bot = WebexTeamsAPI()
     webex_rx = WebhookEvent(payload)
+    dispatcher = APIGWDispatcher(webex_bot)
+
+    # Built the Actions Menu in the APIGWDispatcher
+    logger.info("Preparing Actions Menu for APIGWDispatcher for Webex Teams Client")
+    if apigw_actions_builder(dispatcher):
+        logger.info("Webex Teams Action Menu built sucessfully")
+    else:
+        logger.error(
+            "Action Menu build fails, Default Action is the only opyion available"
+        )
+
+    # Start Processing
     response = {"status_code": 200, "status_info": "success"}
 
     in_room = webex_bot.rooms.get(webex_rx.data.roomId)
@@ -48,18 +62,16 @@ def apigw_webex_listener(payload):
     my_own = webex_bot.people.me()
     out_msg = ""
 
-    if in_room.type == 'direct':
+    if in_room.type == "direct":
         order_intent = in_msg.text.rstrip()
     else:
-       input_str = in_msg.text.split(' ', 1)
-       order_intent = input_str[1]
-
+        input_str = in_msg.text.split(" ", 1)
+        order_intent = input_str[1]
 
     try:
         if in_msg.personId == my_own.id:
             response = {"status_code": 400, "status_info": "Can't message myself"}
             return response
-        dispatcher = APIGWDispatcher(webex_bot)
         out_msg = dispatcher.get_orders(order_intent, in_person, in_room)
         response = {
             "status_code": 200,
@@ -67,10 +79,6 @@ def apigw_webex_listener(payload):
             "request": order_intent,
             "space": in_room.title,
         }
-        #out_msg = f"""Hi {in_person.firstName}. I've just read your message.
-        #                  \nIt seems you want to **{in_msg.text}**, 
-        #                  \nam I right?
-        #                  """
         logger.info(response)
     except ApiError as err:
         logger.error("Failure in procesing incoming message from Team : %s", err)
@@ -81,7 +89,14 @@ def apigw_webex_listener(payload):
         logger.info("Messsage Dispatched : %s", out_msg)
     else:
         logger.info("Messsage Delivery Failure")
+
+    # Clean Objects
+    del webex_bot
+    del dispatcher
+    del webex_rx
+    logger.info("All Objects references has been cleared out")
     return response
+
 
 # ====== Helpers Functions ==========
 def apigw_check_source_room(room_id):
@@ -96,10 +111,11 @@ def apigw_check_source_room(room_id):
         check = True
     return check
 
-def apigw_send_message(webex_bot,room_id, message):
-    '''
+
+def apigw_send_message(webex_bot, room_id, message):
+    """
     DRY for Message delivery
-    '''
+    """
     delivery_status = False
     try:
         webex_bot.messages.create(room_id, markdown=message)
@@ -107,3 +123,47 @@ def apigw_send_message(webex_bot,room_id, message):
     except ApiError:
         delivery_status = False
     return delivery_status
+
+
+def get_health(message):
+    """
+    Simple Health Check
+    params
+    message: incoming message
+    return: True/False
+    """
+    if message:
+        health_check = "Webex Teams Comm is Working :) "
+    else:
+        health_check = " Webex Teams Comm is not working :("
+
+    return health_check
+
+
+
+# Generic Action Registrar
+def apigw_actions_builder(dispatcher):
+    """
+    Create the Menu Actions based on Enabled Services
+    params:
+    Registrar - APIGWDispatcher Object
+    Requester -  The Functions Module
+    ActionSet - The Action Array (action-word, halper-msg, command)
+    return: True/False
+    """
+    action_builder = False
+
+    if webex_teams_enable():
+        dispatcher.add_action(
+            "webex-health", "Get Health of Webex Teams Link", get_health
+        )
+        action_builder = True
+
+    # Sample Service
+    covid = CovidStats()
+    dispatcher.add_action(
+            "covid-info" , 
+            "Latest-Covid Information", 
+            covid.get_covid_summary
+            )
+    return action_builder
