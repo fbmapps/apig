@@ -82,13 +82,21 @@ class APIGWDispatcher:
             out_msg = self.actions["help"]["callback"](in_message)
         elif action in self.actions.keys():
             logger.info("A configured Action has been received: %s", action)
-            out_msg = self.actions[action]["callback"](in_message)
+            if "card" in action:
+                logger.info("An AdaptiveCard is enclosed in the message")
+                reply = []
+                rx_dict = self.actions[action]["callback"](in_message)
+                reply.append(rx_dict)
+                out_msg = "AdaptiveCard Enclosed"
+                self.webex_bot.messages.create(room.id, markdown=out_msg, attachments=reply)
+            else:
+                #Regular Message
+                out_msg = self.actions[action]["callback"](in_message)
         else:
             logger.warning("No Match with an defined Action: %s", action)
 
-        # Response with the Action Crafted Meesage
-        # self.webex_bot.messages.create(room.id, markdown=out_msg)
 
+   
         logger.info("Order Intent Proccess finish. Action   : %s ", in_message)
         return out_msg
 

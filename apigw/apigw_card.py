@@ -1,0 +1,86 @@
+meraki_form = {}
+
+meraki_form = {
+    "contentType": "application/vnd.microsoft.card.adaptive",
+    "content": {
+        "type": "AdaptiveCard",
+        "version": "1.0",
+        "body": [
+            {
+                "type": "TextBlock",
+                "text": "Meraki Vlan Changer",
+                "id": "form_title",
+                "spacing": "Medium",
+                "size": "Medium",
+                "weight": "Lighter",
+                "color": "Light",
+            },
+            {
+                "type": "Input.Text",
+                "placeholder": "IP Address 1.1.1.1",
+                "id": "switch_ip",
+                "maxLength": 15,
+                "spacing": "ExtraLarge",
+            },
+            {
+                "type": "Input.Number",
+                "placeholder": "Select Port Number",
+                "id": "port_number",
+                "min": 1,
+                "max": 48,
+            },
+            {
+                "type": "Input.Text",
+                "placeholder": "Set Port Name",
+                "id": "port_name",
+                "maxLength": 20,
+                "spacing": "ExtraLarge",
+                "separator": True,
+            },
+            {
+                "type": "Input.Text",
+                "placeholder": "Set Data Vlan Number",
+                "id": "data_vlan",
+                "maxLength": 4,
+            },
+            {
+                "type": "Input.Text",
+                "placeholder": "Set Voice Vlan",
+                "id": "voice_vlan",
+                "maxLength": 4,
+            },
+            {
+                "type": "Input.Toggle",
+                "title": "Enable",
+                "value": "true",
+                "wrap": True,
+                "separator": True,
+                "id": "port_status",
+                "spacing": "ExtraLarge",
+            },
+            {
+                "type": "Input.Toggle",
+                "title": "Enabling Trunking",
+                "value": "false",
+                "wrap": False,
+                "id": "trunk_status",
+            },
+            {
+                "type": "Input.Toggle",
+                "title": "PoE",
+                "value": "true",
+                "wrap": False,
+                "id": "poe_status",
+            },
+        ],
+        "id": "meraki_form",
+        "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+        "fallbackText": "meraki form",
+        "selectAction": {
+            "type": "Action.Submit",
+            "id": "submit_data",
+            "title": "Apply",
+        },
+        "actions": [{"type": "Action.Submit", "title": "Apply", "id": "submit"}],
+    },
+}

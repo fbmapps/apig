@@ -13,6 +13,7 @@ __license__ = "MIT"
 
 # ==== Libraries ====
 import os
+import json
 import logging
 from webexteamssdk import WebexTeamsAPI, WebhookEvent, ApiError
 
@@ -20,7 +21,7 @@ from webexteamssdk import WebexTeamsAPI, WebhookEvent, ApiError
 from apigw.apigw_dispatcher import APIGWDispatcher
 from apigw.apigw_generic import webex_teams_enable
 from apigw.apigw_misc import CovidStats
-
+from apigw.apigw_card import meraki_form
 # ==== Create a Logger ======
 logger = logging.getLogger("apigw.WebexTeams")
 
@@ -112,18 +113,20 @@ def apigw_check_source_room(room_id):
     return check
 
 
-def apigw_send_message(webex_bot, room_id, message):
+def apigw_send_message(webex_bot, room_id, message, card=None):
     """
     DRY for Message delivery
     """
     delivery_status = False
     try:
-        webex_bot.messages.create(room_id, markdown=message)
+        if card is None:
+            webex_bot.messages.create(room_id, markdown=message)
+        else:    
+            webex_bot.messages.create(room_id, text=message, atachments=card)
         delivery_status = True
     except ApiError:
         delivery_status = False
     return delivery_status
-
 
 def get_health(message):
     """
@@ -136,10 +139,13 @@ def get_health(message):
         health_check = "Webex Teams Comm is Working :) "
     else:
         health_check = " Webex Teams Comm is not working :("
-
     return health_check
 
-
+def send_card(message):
+    """
+    Send an AdaptiveCard
+    """
+    return meraki_form
 
 # Generic Action Registrar
 def apigw_actions_builder(dispatcher):
@@ -157,6 +163,12 @@ def apigw_actions_builder(dispatcher):
         dispatcher.add_action(
             "webex-health", "Get Health of Webex Teams Link", get_health
         )
+        dispatcher.add_action(
+                "send-card",
+                "Send Meraki Form",
+                send_card
+                )
+
         action_builder = True
 
     # Sample Service

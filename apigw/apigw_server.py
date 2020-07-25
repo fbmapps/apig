@@ -24,7 +24,7 @@ from flask import Flask, jsonify, request
 
 # ==== Custom Libraries ===========
 # import apigw.apigwlogger
-from apigw.apigw_webex import *
+from apigw.apigw_webex import apigw_webex_listener
 
 # ==== Flask Instance =============
 app = Flask(__name__)
