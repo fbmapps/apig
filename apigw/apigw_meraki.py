@@ -37,11 +37,13 @@ class APIGWMerakiWorker:
         if meraki_org in [""]:
             # if no meraki ORG or NET use Default Meraki Org and Net
             self.meraki_org = str(os.environ["MERAKI_ORG"])
-        elif meraki_net in [""]:
-            self.meraki_net = str(os.environ["MERAKI_DEFAULT_NETWORK"])
         else:
             self.meraki_org = meraki_org
-            self.meraki_net = meraki_net
+
+        if meraki_net in [""]:
+            self.meraki_net = str(os.environ["MERAKI_DEFAULT_NETWORK"])
+        else:
+            self.meraki_net = meraki_net    
 
     def show_meraki_network(self, job_req):
         """
@@ -53,17 +55,15 @@ class APIGWMerakiWorker:
         logger.info("Job Received: %s", job_req)
         api_uri = f"/v1/organizations/{self.meraki_org}/networks"
         data = get_meraki_api_data(api_uri)
-        net_json = {}
         # Select the Mmeraki Network
         for network in data:
             net_info = network
-            
-         
+
         message = f"You are connecting to **{net_info['name']}**, which have this type of products \n"
         for product in net_info["productTypes"]:
             message += f"* **{product}**  \n"
-    
-        #message = net_json
+
+        # message = net_json
         return message
 
     def get_meraki_devices(self, job_req):
@@ -75,7 +75,24 @@ class APIGWMerakiWorker:
         api_uri = f"/v1/networks/{self.meraki_net}/devices"
         data = get_meraki_api_data(api_uri)
         # Prepare Message
-        return data
+        message = "**TODO**"
+        return message
+
+    def show_meraki_vlans(self, job_req):
+        """
+        Show All Vlans Associated to Meraki Network
+        job_req: Message from Dispatcher
+        return a message
+        """
+        logger.info("Job Received : %s", job_req)
+        api_uri = f"/v1/networks/{self.meraki_net}/appliance/vlans"
+        data = get_meraki_api_data(api_uri)
+        # Parse the JSON
+        message = f"There are {len(data)} vlans in the Network. Details:  \n"
+        for vlan in data:
+            message += f"* **{vlan['name']}** |  ID: **{vlan['id']}** | Subnet: **{vlan['subnet']}**  \n"
+
+        return message
 
 
 # === Meraki API CRUD Operations =====

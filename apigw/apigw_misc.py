@@ -52,11 +52,10 @@ class CovidStats:
         endpoint = "/summary"
         data = self.query_api(endpoint)
         datapoint = str(data["Global"]["NewConfirmed"])
-        reply = f"""
-                 Here is the Latest COVID from Jhon Hopskin Data: \n
-                 * **{datapoint}** new confirmed cases \n
-                 * **{data["Global"]["TotalDeaths"]}** Deaths \n
-                 * **{data["Global"]["TotalRecovered"]}** recovered \n
-                 * **{data["Global"]["TotalConfirmed"]}** cases World-wide
-                 """
+        reply = "Here is the latest stats for COVID-19 from John Hopskins Data:  \n"
+        reply += f"* **{datapoint}** new confirmed cases   \n"
+        reply += f"* **{data['Global']['TotalDeaths']}** Deaths  \n"
+        reply += f"* **{data['Global']['TotalRecovered']}** recovered  \n"
+        reply += f"* **{data['Global']['TotalConfirmed']}** cases World-wide  \n"
+    
         return reply

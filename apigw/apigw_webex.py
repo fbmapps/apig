@@ -188,6 +188,12 @@ def apigw_actions_builder(dispatcher):
                 mki.show_meraki_network
                 )
 
+        dispatcher.add_action(
+                "show-meraki-vlans",
+                "Display a List with the VLANS attached to the Meraki Network",
+                mki.show_meraki_vlans
+                )
+
     # Sample Service
     covid = CovidStats()
     dispatcher.add_action(
