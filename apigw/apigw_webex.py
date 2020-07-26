@@ -21,6 +21,7 @@ from apigw.apigw_dispatcher import APIGWDispatcher
 from apigw.apigw_generic import webex_teams_enable
 from apigw.apigw_misc import CovidStats
 from apigw.apigw_card import meraki_form, simple_form
+from apigw.apigw_meraki import APIGWMerakiWorker, meraki_api_enable
 
 # ==== Create a Logger ======
 logger = logging.getLogger("apigw.WebexTeams")
@@ -177,6 +178,15 @@ def apigw_actions_builder(dispatcher):
         dispatcher.add_action("simple-card", "Adaptive Card Simple form", simple_card)
 
         action_builder = True
+    
+    # Meraki Service
+    if meraki_api_enable():
+        mki = APIGWMerakiWorker()
+        dispatcher.add_action(
+                "show-meraki-network",
+                "Summery Info of Managed Meraki Network",
+                mki.show_meraki_network
+                )
 
     # Sample Service
     covid = CovidStats()

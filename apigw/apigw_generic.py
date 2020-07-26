@@ -16,21 +16,9 @@ __license__ = "MIT"
 import os
 
 # ==== Load ENV Variables ===
-meraki_api_token = str(os.environ['MERAKI_API_KEY'])
 webext_access_token = str(os.environ['WEBEX_TEAMS_ACCESS_TOKEN'])
 
 # ==== General Functions ===
-def meraki_api_enable():
-    '''
-    Validate if Meraki API Token is present
-    '''
-    if meraki_api_token:
-        return True
-    else:
-        return False
-
-    return False
-
 def webex_teams_enable():
     '''
     Validate Webex Teams Bot requires data is present

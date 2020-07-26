@@ -140,6 +140,13 @@ meraki_form = {
                 "id": "poe_status",
             },
         ],
-        "actions": [{"type": "Action.Submit", "title": "Apply"}],
+        "actions": [
+            {
+                "type": "Action.Submit",
+                "title": "Apply",
+                "id": "submitAction",
+                "style": "positive",
+            }
+        ],
     },
 }
