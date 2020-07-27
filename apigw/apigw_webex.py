@@ -42,9 +42,17 @@ def apigw_webex_listener(payload):
     webex_rx = WebhookEvent(payload)
     dispatcher = APIGWDispatcher(webex_bot)
 
+    # Webex Teams API Objects
+    in_room = webex_bot.rooms.get(webex_rx.data.roomId)
+    in_msg = webex_bot.messages.get(webex_rx.data.id)
+    in_person = webex_bot.people.get(in_msg.personId)
+    requestor_name = in_person.displayName
+    my_own = webex_bot.people.me()
+    out_msg = ""
+
     # Built the Actions Menu in the APIGWDispatcher
-    logger.info("Preparing Actions Menu for APIGWDispatcher for Webex Teams Client")
-    if apigw_actions_builder(dispatcher):
+    logger.info("Preparing Actions Menu for APIGWDispatcher for Webex Teams Client for %s", requestor_name)
+    if apigw_actions_builder(dispatcher, requestor_name):
         logger.info("Webex Teams Action Menu built sucessfully")
     else:
         logger.error(
@@ -53,12 +61,6 @@ def apigw_webex_listener(payload):
 
     # Start Processing
     response = {"status_code": 200, "status_info": "success"}
-
-    in_room = webex_bot.rooms.get(webex_rx.data.roomId)
-    in_msg = webex_bot.messages.get(webex_rx.data.id)
-    in_person = webex_bot.people.get(in_msg.personId)
-    my_own = webex_bot.people.me()
-    out_msg = ""
 
     if in_room.type == "direct":
         order_intent = in_msg.text.rstrip()
@@ -149,12 +151,12 @@ def simple_card(message):
     return simple_form
 
 # Generic Action Registrar
-def apigw_actions_builder(dispatcher):
+def apigw_actions_builder(dispatcher, requestor_name):
     """
     Create the Menu Actions based on Enabled Services
     params:
     Registrar - APIGWDispatcher Object
-    Requester -  The Functions Module
+    Requester -  Person sending the message
     ActionSet - The Action Array (action-word, halper-msg, command)
     return: True/False
     """
@@ -171,7 +173,7 @@ def apigw_actions_builder(dispatcher):
     
     # Meraki Service
     if meraki_api_enable():
-        mki = APIGWMerakiWorker()
+        mki = APIGWMerakiWorker(requestor_name)
         dispatcher.add_action(
                 "show-meraki-network",
                 "Summery Info of Managed Meraki Network",

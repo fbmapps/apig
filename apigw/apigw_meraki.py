@@ -28,8 +28,9 @@ class APIGWMerakiWorker:
     MERAKI_API_TOKEN
     MERAKI_ORG
     """
-    def __init__(self, meraki_org="", meraki_net=""):
+    def __init__(self, requestor_name, meraki_org="", meraki_net=""):
         self.__name__ = "APIGW MERAKI Worker"
+        self.job_owner = requestor_name
         if meraki_org in [""]:
             # if no meraki ORG or NET use Default Meraki Org and Net
             self.meraki_org = str(os.environ["MERAKI_ORG"])
@@ -134,8 +135,9 @@ class APIGWMerakiWorker:
                 logger.info("VALIDATION Succeeded Switch serial Found %s", serial_id)
 
             #STEP 1-2: Validate Vlans ID
-            if validate_vlan(vlan_id, self.meraki_net):
-                logger.info("VALIDATION Succeeded Vlan ID Valid %s", serial_id)
+            vlan_exists, vlan_name = validate_vlan(vlan_id, self.meraki_net)
+            if vlan_exists:
+                logger.info("VALIDATION Succeeded Vlan ID Valid for %s Name: %s", vlan_id, vlan_name)
             else:
                 logger.error("VALIDATION failed Vlan ID not Found %s", vlan_id)
                 message = f"{devicon} **Invalid VLAN ID**"
@@ -151,7 +153,7 @@ class APIGWMerakiWorker:
 
             #STEP 2: Prepare the Payload
             port_payload = {}
-            port_payload["name"] = "Port changed via Webex Teams"
+            port_payload["name"] = f"Port changed by {self.job_owner} to {vlan_name.upper()} via Teams"
             port_payload["tags"] = ["Changed","Automation", "WebexBot", "DevOps"]
             port_payload["vlan"] = vlan_id
             port_payload["type"] = "access"
@@ -161,8 +163,9 @@ class APIGWMerakiWorker:
             api_uri = f"/v1/devices/{serial_id}/switch/ports/{int(port_id)}"
             data = update_via_meraki_api(api_uri, port_payload)
             if data:
-                logger.info("Port updated successfully : ")
+                logger.info("Port updated successfully job_owner %s : ", self.job_owner)
                 message = "**Port Update has been applied Sucesfully**  \n"
+                message += F"* Job Owner: **{self.job_owner}**  \n"
                 message += f"* PortID **{data['portId']}**  \n"
                 message += f"* Port Name **{data['name']}**  \n"
                 message += f"* Port Type **{data['type']}**  \n"
@@ -263,13 +266,15 @@ def validate_vlan(vlan_id, meraki_net):
     API V0
     """
     check_vlan = False
+    vlan_name = ""
     api_uri = f"/v0/networks/{meraki_net}/vlans/{vlan_id}"
     data = get_meraki_api_data(api_uri)
     if data:
         check_vlan = True
+        vlan_name = data["name"].strip()
     else:
         check_vlan = False
-    return check_vlan
+    return check_vlan, vlan_name
 
 def validate_port(port_id, serial_id):
     """
