@@ -7,7 +7,6 @@ DATE : JUL 2020
 VERSION: 1.0
 STATE: RC2
 """
-
 __author__ = "Freddy Bello"
 __author_email__ = "frbello@cisco.com"
 __copyright__ = "Copyright (c) 2016-2020 Cisco and/or its affiliates."
@@ -27,7 +26,6 @@ class APIGWDispatcher:
     """
     Class to Receive Order Requests and Call Specific Resources
     """
-
     def __init__(self, webex_bot):
         self.__name__ = "APIGW_Dispatcher"
         self.webex_bot = webex_bot
@@ -38,10 +36,8 @@ class APIGWDispatcher:
         Collect Order Intent from message and
         pass to the specific worker
         """
-
         # ===== Inputs =======
         in_message = order_intent
-
         # ==== Outputs ======
         out_msg = ""
 
@@ -53,9 +49,9 @@ class APIGWDispatcher:
             order_rx_msg = "Ok. I got your order. let me check the actions available..."
         else:
             # if requests came from a Space, then you can mention the requester
-            order_rx_msg = f"""Hi <@personId:{person.id}>.
-                           \nI have your order in queue.
-                           \nPlease, Let me check the actions available...
+            order_rx_msg = f"""Hi <@personId:{person.id}>.  \n
+                           I have your order in queue.  \n
+                           Please, Let me check the actions available...  \n
                            """
         # Send the message
         logger.info("Order Acknowledege sended")
@@ -94,8 +90,6 @@ class APIGWDispatcher:
                 out_msg = self.actions[action]["callback"](in_message)
         else:
             logger.warning("No Match with an defined Action: %s", action)
-
-
    
         logger.info("Order Intent Proccess finish. Action   : %s ", in_message)
         return out_msg
@@ -127,12 +121,12 @@ class APIGWDispatcher:
         post_data
         return: message
         """
-        message = f"Hello, you send **{in_message}** \n"
-        message += "\n and I am ready to only understand the following actions: \n"
+        message = f"Hello, you send **{in_message}**  \n"
+        message += "and I am ready to only understand the following actions:  \n"
 
         for item in self.actions.items():
             if item[1]["help"] != "*":
-                message += "* **%s**: %s\n" % (item[0], item[1]["help"])
+                message += "* **%s**: %s  \n" % (item[0], item[1]["help"])
         return message
 
     def extract_message(self, action, text):

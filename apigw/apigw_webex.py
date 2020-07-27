@@ -10,22 +10,18 @@ __author__ = "Freddy Bello"
 __author_email__ = "frbello@cisco.com"
 __copyright__ = "Copyright (c) 2016-2020 Cisco and/or its affiliates."
 __license__ = "MIT"
-
 # ==== Libraries ====
 import os
 import logging
 from webexteamssdk import WebexTeamsAPI, WebhookEvent, ApiError
-
 # ==== Custom APIGW Libraries ====
 from apigw.apigw_dispatcher import APIGWDispatcher
 from apigw.apigw_generic import webex_teams_enable
 from apigw.apigw_misc import CovidStats
 from apigw.apigw_card import meraki_form, simple_form
 from apigw.apigw_meraki import APIGWMerakiWorker, meraki_api_enable
-
 # ==== Create a Logger ======
 logger = logging.getLogger("apigw.WebexTeams")
-
 
 def apigw_webex_listener(payload):
     """
@@ -99,7 +95,6 @@ def apigw_webex_listener(payload):
     logger.info("All Objects references has been cleared out")
     return response
 
-
 # ====== Helpers Functions ==========
 def apigw_check_source_room(room_id):
     """
@@ -112,7 +107,6 @@ def apigw_check_source_room(room_id):
     if room_id in (direct_room, group_room):
         check = True
     return check
-
 
 def apigw_send_message(webex_bot, room_id, message, card=None):
     """
@@ -129,7 +123,6 @@ def apigw_send_message(webex_bot, room_id, message, card=None):
         delivery_status = False
     return delivery_status
 
-
 def get_health(message):
     """
     Simple Health Check
@@ -143,20 +136,17 @@ def get_health(message):
         health_check = " Webex Teams Comm is not working :("
     return health_check
 
-
 def send_card(message):
     """
     Send an AdaptiveCard
     """
     return meraki_form
 
-
 def simple_card(message):
     """
         Send an AdaptiveCard
         """
     return simple_form
-
 
 # Generic Action Registrar
 def apigw_actions_builder(dispatcher):
@@ -187,11 +177,20 @@ def apigw_actions_builder(dispatcher):
                 "Summery Info of Managed Meraki Network",
                 mki.show_meraki_network
                 )
-
         dispatcher.add_action(
                 "show-meraki-vlans",
                 "Display a List with the VLANS attached to the Meraki Network",
                 mki.show_meraki_vlans
+                )
+        dispatcher.add_action(
+                "show-meraki-switch",
+                "Display a List with the Switches attached to the Meraki Network",
+                mki.show_meraki_switch
+                )
+        dispatcher.add_action(
+                "change-meraki-port",
+                "Parameters: Switch IP, Switch-Port, Vlan-ID ie _change-port-vlan 1.1.1.1 10 101",
+                mki.change_port_vlan
                 )
 
     # Sample Service
