@@ -14,6 +14,8 @@ __license__ = "MIT"
 import os
 import json
 import logging
+import secrets
+import string
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 # === Disable SSL Warnings ===
@@ -108,7 +110,7 @@ class APIGWMerakiWorker:
         return: Job Action Message
         API V1
         """
-        #Extract parameters from job_req
+        # STEP-0 Extract parameters from job_req
         #job_params
         #job_params[0]: Bot Command
         #job_params[1]: Switch IP Address
@@ -120,12 +122,12 @@ class APIGWMerakiWorker:
             #Not Enough info provided
             message = f" Job Request is incomplete, please provide Switch IP, Switch-Port, Vlan-ID ie _change-port-vlan 1.1.1.1 10 101 \n"
         else:
-            #STEP 0: Initialize all the parameters
+            ## STEP 0-1: Assign all the parameters to job variables
             ip_addr = job_params[1]
             port_id = job_params[2]
             vlan_id = job_params[3]
-            #STEP 1: Validations
-            #STEP 1-1: GET Switch Serial Number
+            # STEP 1: Validations
+            ## STEP 1-1: GET Switch Serial Number
             serial_id = get_switch_serial(ip_addr, self.meraki_net)
             if serial_id in [""]:
                 message = f"{devicon} **There is not switch with that IP**"
@@ -134,7 +136,7 @@ class APIGWMerakiWorker:
             else:
                 logger.info("VALIDATION Succeeded Switch serial Found %s", serial_id)
 
-            #STEP 1-2: Validate Vlans ID
+            ## STEP 1-2: Validate Vlans ID
             vlan_exists, vlan_name = validate_vlan(vlan_id, self.meraki_net)
             if vlan_exists:
                 logger.info("VALIDATION Succeeded Vlan ID Valid for %s Name: %s", vlan_id, vlan_name)
@@ -143,7 +145,7 @@ class APIGWMerakiWorker:
                 message = f"{devicon} **Invalid VLAN ID**"
                 return message
 
-            #STEP 1-3: Validate Port ID
+            ## STEP 1-3: Validate Port ID
             if validate_port(port_id, serial_id):
                 logger.info("VALIDATION Succeeded Port ID Valid %s", port_id)
             else:
@@ -151,7 +153,7 @@ class APIGWMerakiWorker:
                 message = f"{devicon} **Invalid Port ID**"
                 return message
 
-            #STEP 2: Prepare the Payload
+            # STEP 2: Prepare the Payload
             port_payload = {}
             port_payload["name"] = f"Port changed by {self.job_owner} to {vlan_name.upper()} via Teams"
             port_payload["tags"] = ["Changed","Automation", "WebexBot", "DevOps"]
@@ -159,7 +161,7 @@ class APIGWMerakiWorker:
             port_payload["type"] = "access"
             logger.info("JSON Data to Port Update %s ", json.dumps(port_payload))
 
-            #STEP 3: Send The Change to API
+            # STEP 3: Send The Change to API
             api_uri = f"/v1/devices/{serial_id}/switch/ports/{int(port_id)}"
             data = update_via_meraki_api(api_uri, port_payload)
             if data:
@@ -174,7 +176,64 @@ class APIGWMerakiWorker:
             else:                
                 logger.error("Port update failed : ") 
                 message = f"{devicon} Port Update incomplete"
-        return message        
+        return message 
+
+        def activate_new_ssid(self, job_req):
+            """
+            Select Unused SSID and Activate it for Services
+            params: job_req - Message from Dispacther with job details
+            return: Message Confirmation
+            API V0
+            """
+            message = ""
+            devicon = chr(0x2757) + chr(0xFE0F)
+            # STEP-0 Extract parameters from job_req
+            job_params = job_req.split(" ", 1)
+            ## job_params[0] = Bot Command
+            ## job_params[1] = SSID Name
+            ## STEP 0-1 job_req validation
+            if len(job_params) < 2:
+                #Not Enough info provided
+                message = "Job Request is incomplete, please provide SSID Name ie. _activate-ssid Testing_  \n"
+            else:
+                ## STEP 0-2 Assign job_params to job variables
+                ssid_name = job_params[1]
+                # STEP 1 - Get the First Unused SSID
+                ssid_num, ssid_state = get_unused_ssid(self.meraki_net)
+                if ssid_num == -1:
+                    message = f"{devicon} **All SSID are in Use**"
+                    logger.error("VALIDATION failed Not Available SSID to Activate")
+                    return message
+                else:
+                    logger.info("VALIDATION succeeded the SSID number %s is available", str(ssid_num).strip())
+
+                # STEP 2 - Prepare Payload:
+                ssid_payload = {}
+                ssid_payload["name"] = ssid_name.strip()
+                ssid_payload["enabled"] = True
+                ssid_payload["authMode"] = "psk"
+                ssid_payload["encryptionMode"] = "wpa"
+                ssid_payload["wpaEncryptionMode"] = "WPA2 only"
+                ssid_payload["visible"] = True
+                ssid_payload["psk"] = generate_preshare_key()
+
+                # STEP 3 - Request Activation to Meraki API:
+                api_uri = f"/v0/networks/{self.meraki_net}/ssids/{ssid_num}"
+                data = update_via_meraki_api(api_uri, ssid_payload)
+                if data:
+                    logger.info("SSID Activation succeeded for job_owner %s : ", self.job_owner)
+                    message = "**SSID Activation has been applied sucesfully**  \n"
+                    message += F"* Job Owner: **{self.job_owner}**  \n"
+                    message += f"* SSID Number **{data['number']}**  \n"
+                    message += f"* SSID Name **{data['name']}**  \n"
+                    message += f"* Preshare Key **{data['psk']}**  \n"
+                    message += f"* Encryption Mode **{data['encryptionMode']}**  \n"
+                    message += f"* Visible **{data['visible']}**  \n"
+                else:                
+                    logger.error("SSID Activation failed : ") 
+                    message = f"{devicon} **SSID Activation incomplete**"
+
+            return message       
 
 
 # === Meraki API CRUD Operations =====
@@ -258,6 +317,40 @@ def get_switch_serial(ip_addr, meraki_net):
                 logger.info("Switch Found! Serial %s" , serial_id)            
     return serial_id
 
+def get_unused_ssid(meraki_net):
+    ssid_num = -1
+    ssid_state = False
+    api_uri = f"/v1/networks/{meraki_net}/wireless/ssids"
+    data = get_meraki_api_data(api_uri)
+    for ssid in data:
+        current_label = str(ssid["name"]).split()[0] # Extract the First Word of the SSID Label
+        if "Unconfigured" in [current_label]:
+            ssid_num = ssid["number"]
+            ssid_state = ssid["enabled"]
+            print(ssid["name"])
+            break #Stop at the First SSID Unused
+            
+    return ssid_num, ssid_state
+
+def generate_preshare_key(size_of_psk=16):
+    """
+    Random Preshare Key Generator
+    Use Secrets to Generate Cryptographic Unique PSK
+    params: size_of_psk - Number of Characters to generate Default 16 Characters
+    return: Preshare Key
+    """
+    preshare_key = ""
+    psk_source = string.ascii_letters + string.digits
+    for i in range(size_of_psk):
+        preshare_key += secrets.choice(psk_source)
+    
+    char_list = list(preshare_key)
+    secrets.SystemRandom().shuffle(char_list)
+    preshare_key = ''.join(char_list)
+
+    return preshare_key
+
+
 def validate_vlan(vlan_id, meraki_net):
     """
     Helper to Validate if a Vlan ID exist
@@ -292,13 +385,11 @@ def validate_port(port_id, serial_id):
         check_port = False
     return check_port
 
-
 def meraki_api_enable():
     """
     Validate If Meraki Token is Set
     Return True/False
     """
-
     token = str(os.environ["MERAKI_API_KEY"])
     if token in [""]:
         logger.warning('API Key for Meraki is missing. check ENV')

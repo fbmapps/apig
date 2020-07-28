@@ -49,10 +49,10 @@ class APIGWDispatcher:
             order_rx_msg = "Ok. I got your order. let me check the actions available..."
         else:
             # if requests came from a Space, then you can mention the requester
-            order_rx_msg = f"""Hi <@personId:{person.id}>.  \n
-                           I have your order in queue.  \n
-                           Please, Let me check the actions available...  \n
-                           """
+            order_rx_msg = f"Hi <@personId:{person.id}>.  \n"
+            order_rx_msg += "I have your order in queue.  \n"
+            order_rx_msg += "Please, Let me check the actions available...  \n"
+                           
         # Send the message
         logger.info("Order Acknowledege sended")
         self.webex_bot.messages.create(room.id, markdown=order_rx_msg)

@@ -194,6 +194,11 @@ def apigw_actions_builder(dispatcher, requestor_name):
                 "Parameters: Switch IP, Switch-Port, Vlan-ID ie _change-port-vlan 1.1.1.1 10 101",
                 mki.change_port_vlan
                 )
+        dispatcher.add_action(
+                "activate-meraki-ssid",
+                "Parameters: SSID Name, ie _activate-meraki-ssid SSIDName_",
+                mki.activate_new_ssid
+                )        
 
     # Sample Service
     covid = CovidStats()

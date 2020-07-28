@@ -16,9 +16,9 @@ __license__ = "MIT"
 import unittest
 
 # === Test Targets =====
-import apigw_misc
 import apigw_server
 import apigw_generic
+import apigw_meraki
 
 # ==== Test Flask Webserver Routes ===
 class ApicGWTest(unittest.TestCase):
@@ -61,11 +61,7 @@ class GenericAPITest(unittest.TestCase):
     def setUp(self):
         pass
 
-
-    def test_query_api(self):
-        '''
-        Test query API
-        '''
+    def tearDown(self):
         pass
 
 # ==== Test Genral Functions =======
@@ -76,21 +72,46 @@ class GenericFuntionsTest(unittest.TestCase):
     def setUp(self):
         pass
 
-    def test_meraki_is_enable(self):
-        '''
-        Validate Meraki Checker Function
-        '''
-        self.assertTrue(apigw_generic.apigw_meraki_enable())
-
     def test_webext_is_enable(self):
         '''
         Validate WbxT Token Checker Function
         '''
         self.assertTrue(apigw_generic.apigw_webext_enable())
-
     def tearDown(self):
         pass
 
+# ==== Meraki Worker Module Tests =======
+class MerakiWorkerTest(unittest.TestCase):
+    """
+    Testing Functionalities in Meraki Module
+    """
+    def setUp(self):
+        pass
+
+    def test_meraki_api_enable(self):
+        """
+        Validate Meraki Checker Function
+        """
+        self.assertTrue(apigw_meraki.apigw_meraki_api_enable()) 
+
+    def test_decode_meraki_model(self):
+        """
+        Validate Meraki Decoder returns the appropiate Value
+        """
+        label = apigw_meraki.decode_meraki_model("MS220-8P")
+        self.assertEqual(label, "switch") 
+
+    def test_generate_preshare_key(self):
+        """
+        Validate Preshare Key Generator
+        """
+        size_of = 8
+        psk = apigw_meraki.generate_preshare_key(size_of)
+        self.assertTrue(psk)       
+
+
+    def tearDown(self):
+        pass    
 
 # ==== Main Function ======
 if __name__ == '__main__':
