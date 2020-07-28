@@ -63,7 +63,15 @@ class MerakiWorkerTest(unittest.TestCase):
         #Evaluate first the SSID number and then SSID status
         self.assertTrue( 0 <= ssid_number <= 14, "SSID Out of Range" ) # Check SSID is between 0 and 15
         self.assertEqual(ssid_status, False, "SSID Unavailable") # Check SSID is Disable = enabled : false
-        
+
+    def test_get_used_ssid_by_name(self):
+        """
+        Check Meraki function to retrieve the current ID from SSID name
+        """
+        ssid_name = "TestingSSID"
+        ssid_number, ssid_status = apigw_meraki.get_used_ssid_by_name(meraki_net, ssid_name)
+        self.assertTrue( 0 <= ssid_number <= 14, "SSID Out of Range" ) # Check SSID is between 0 and 15
+       
 
     def tearDown(self):
         pass

@@ -199,6 +199,17 @@ def apigw_actions_builder(dispatcher, requestor_name):
                 "Parameters: SSID Name, ie _activate-meraki-ssid SSIDName_",
                 mki.activate_new_ssid
                 )        
+        dispatcher.add_action(
+                "show-meraki-ssid",
+                "Parameters: Display a List of All Enabled SSIDs",
+                mki.show_meraki_ssid
+                ) 
+        dispatcher.add_action(
+                "remove-meraki-ssid",
+                "Parameters: Remove and Disable a SSIDs by name or Number ID ie _remove-meraki-ssid <SSID NAME> | <SSID NUMBER 1 to 15>_",
+                mki.remove_ssid
+                )         
+
 
     # Sample Service
     covid = CovidStats()

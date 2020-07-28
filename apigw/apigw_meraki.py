@@ -102,6 +102,37 @@ class APIGWMerakiWorker:
         message += f"Total: **{device_counter}**  \n"        
         return message
 
+    def show_meraki_ssid(self, job_req):
+        """
+        Show All enabled and named SSID
+        job_req: Message from Dispatcher, parse the request
+        API V1
+        """
+        message = ""
+        logger.info("Job Received : %s", job_req)
+        api_uri = f"/v1/networks/{self.meraki_net}/wireless/ssids"
+        data = get_meraki_api_data(api_uri)
+        message = "Here is the detail:  \n"
+        configured_ssid_counter = 0
+        unused_ssid_counter = 0
+        for ssid in data:
+            # Find Enabled SSID first
+            if ssid["enabled"]:
+                message += f"* Enabled SSID: ({ssid['number']}) **{ssid['name']}** Mode **{ssid['authMode']}**  \n"
+                configured_ssid_counter += 1
+            # Find Named SSID which are disabled
+            # Extract SSID Name
+            ssid_cur_name = ssid["name"].split()
+            if "Unconfigured" not in [ssid_cur_name[0].strip()] and not ssid["enabled"]:
+                message += f"* Disbaled SSID ({ssid['number']}) **{ssid['name']}** Mode **{ssid['authMode']}**  \n"
+                configured_ssid_counter += 1
+            else:
+                # All the Unconfigured SSIDs
+                unused_ssid_counter += 1
+
+        message += f"Total: Configured **{configured_ssid_counter}** Unused **{unused_ssid_counter - configured_ssid_counter }**  \n"
+        return message        
+
     def change_port_vlan(self, job_req):
         """
         Change a Switch Port and assign a vlan
@@ -178,63 +209,117 @@ class APIGWMerakiWorker:
                 message = f"{devicon} Port Update incomplete"
         return message 
 
-        def activate_new_ssid(self, job_req):
-            """
-            Select Unused SSID and Activate it for Services
-            params: job_req - Message from Dispacther with job details
-            return: Message Confirmation
-            API V0
-            """
-            message = ""
-            devicon = chr(0x2757) + chr(0xFE0F)
-            # STEP-0 Extract parameters from job_req
-            job_params = job_req.split(" ", 1)
-            ## job_params[0] = Bot Command
-            ## job_params[1] = SSID Name
-            ## STEP 0-1 job_req validation
-            if len(job_params) < 2:
-                #Not Enough info provided
-                message = "Job Request is incomplete, please provide SSID Name ie. _activate-ssid Testing_  \n"
+    def activate_new_ssid(self, job_req):
+        """
+        Select Unused SSID and Activate it for Services
+        params: job_req - Message from Dispacther with job details
+        return: Message Confirmation
+        API V0
+        """
+        message = ""
+        devicon = chr(0x2757) + chr(0xFE0F)
+        # STEP-0 Extract parameters from job_req
+        job_params = job_req.split(" ", 1)
+        ## job_params[0] = Bot Command
+        ## job_params[1] = SSID Name
+        ## STEP 0-1 job_req validation
+        if len(job_params) < 2:
+            #Not Enough info provided
+            message = "Job Request is incomplete, please provide SSID Name ie. _activate-ssid Testing_  \n"
+        else:
+            ## STEP 0-2 Assign job_params to job variables
+            ssid_name = job_params[1]
+            # STEP 1 - Get the First Unused SSID
+            ssid_num, ssid_state = get_unused_ssid(self.meraki_net)
+            if ssid_num == -1:
+                message = f"{devicon} **All SSID are in Use**"
+                logger.error("VALIDATION failed Not Available SSID to Activate")
+                return message
             else:
-                ## STEP 0-2 Assign job_params to job variables
-                ssid_name = job_params[1]
-                # STEP 1 - Get the First Unused SSID
-                ssid_num, ssid_state = get_unused_ssid(self.meraki_net)
-                if ssid_num == -1:
-                    message = f"{devicon} **All SSID are in Use**"
-                    logger.error("VALIDATION failed Not Available SSID to Activate")
-                    return message
-                else:
-                    logger.info("VALIDATION succeeded the SSID number %s is available", str(ssid_num).strip())
+                logger.info("VALIDATION succeeded the SSID number %s is available", str(ssid_num).strip())
 
-                # STEP 2 - Prepare Payload:
-                ssid_payload = {}
-                ssid_payload["name"] = ssid_name.strip()
-                ssid_payload["enabled"] = True
-                ssid_payload["authMode"] = "psk"
-                ssid_payload["encryptionMode"] = "wpa"
-                ssid_payload["wpaEncryptionMode"] = "WPA2 only"
-                ssid_payload["visible"] = True
-                ssid_payload["psk"] = generate_preshare_key()
+            # STEP 2 - Prepare Payload:
+            ssid_payload = {}
+            ssid_payload["name"] = ssid_name.strip()
+            ssid_payload["enabled"] = True
+            ssid_payload["authMode"] = "psk"
+            ssid_payload["encryptionMode"] = "wpa"
+            ssid_payload["wpaEncryptionMode"] = "WPA2 only"
+            ssid_payload["visible"] = True
+            ssid_payload["psk"] = generate_preshare_key()
 
-                # STEP 3 - Request Activation to Meraki API:
-                api_uri = f"/v0/networks/{self.meraki_net}/ssids/{ssid_num}"
-                data = update_via_meraki_api(api_uri, ssid_payload)
-                if data:
-                    logger.info("SSID Activation succeeded for job_owner %s : ", self.job_owner)
-                    message = "**SSID Activation has been applied sucesfully**  \n"
-                    message += F"* Job Owner: **{self.job_owner}**  \n"
-                    message += f"* SSID Number **{data['number']}**  \n"
-                    message += f"* SSID Name **{data['name']}**  \n"
-                    message += f"* Preshare Key **{data['psk']}**  \n"
-                    message += f"* Encryption Mode **{data['encryptionMode']}**  \n"
-                    message += f"* Visible **{data['visible']}**  \n"
-                else:                
-                    logger.error("SSID Activation failed : ") 
-                    message = f"{devicon} **SSID Activation incomplete**"
+            # STEP 3 - Request Activation to Meraki API:
+            api_uri = f"/v0/networks/{self.meraki_net}/ssids/{ssid_num}"
+            data = update_via_meraki_api(api_uri, ssid_payload)
+            if data:
+                logger.info("SSID Activation succeeded for job_owner %s : ", self.job_owner)
+                message = "**SSID Activation has been applied sucesfully**  \n"
+                message += F"* Job Owner: **{self.job_owner}**  \n"
+                message += f"* SSID Number **{data['number']}**  \n"
+                message += f"* SSID Name **{data['name']}**  \n"
+                message += f"* Preshare Key **{data['psk']}**  \n"
+                message += f"* Encryption Mode **{data['encryptionMode']}**  \n"
+                message += f"* Visible **{data['visible']}**  \n"
+            else:                
+                logger.error("SSID Activation failed : ") 
+                message = f"{devicon} **SSID Activation incomplete**"
 
-            return message       
+        return message
 
+    def remove_ssid(self, job_req):
+        """
+        Select Unused SSID and Activate it for Services
+        params: job_req - Message from Dispacther with job details
+        return: Message Confirmation
+        API V0
+        """
+        message = ""
+        devicon = chr(0x2757) + chr(0xFE0F)
+        # STEP-0 Extract parameters from job_req
+        job_params = job_req.split(" ", 1)
+        ## job_params[0] = Bot Command
+        ## job_params[1] = SSID Name
+        ## STEP 0-1 job_req validation
+        if len(job_params) < 2:
+            #Not Enough info provided
+            message = "Job Request is incomplete, please provide SSID Name ie. _remove-ssid Testing_  \n"
+        else:
+            ## STEP 0-2 Assign job_params to job variables
+            if str(job_params[1]).isnumeric():
+                # The Job Owner Submit already a SSID Number
+                ssid_num = int(job_params[1])
+                logger.info("VALIDATION succeeded SSID number %s  provided by %s", ssid_num, self.job_owner)
+
+            else:
+                ## STEP 0-3 Get SSID ID
+                # The Job Owner pass a name so a ssid_number should be retrieve
+                ssid_name = str(job_params[1]).strip()
+                ssid_num = get_used_ssid_by_name(self.meraki_net, ssid_name)
+                logger.info("VALIDATION succeeded SSID number %s for % ", str(ssid_num) , ssid_name)
+
+            # STEP 2 - Prepare Payload:
+            ssid_payload = {}
+            ssid_payload["name"] = "Unconfigured SSID " + str(ssid_num + 1)
+            ssid_payload["enabled"] = False
+            ssid_payload["authMode"] = "open"
+            ssid_payload["visible"] = True
+
+            # STEP 3 - Request Deactivation to Meraki API:
+            api_uri = f"/v0/networks/{self.meraki_net}/ssids/{ssid_num}"
+            data = update_via_meraki_api(api_uri, ssid_payload)
+            if data:
+                logger.info("SSID removal succeeded for job_owner %s : ", self.job_owner)
+                message = "**SSID Deactivationn has been completed sucesfully**  \n"
+                message += F"* Job Owner: **{self.job_owner}**  \n"
+                message += f"* SSID Number **{data['number']}**  \n"
+                message += f"* SSID Name **{data['name']}**  \n"
+                message += f"* Authentication **{data['authMode']}**  \n"
+                message += f"* Visible **{data['visible']}**  \n"
+            else:                
+                logger.error("SSID Deactivation failed : ") 
+                message = f"{devicon} **SSID Deactivation incomplete**"
+        
+        return message
 
 # === Meraki API CRUD Operations =====
 ## === Common Paramenters
@@ -331,6 +416,18 @@ def get_unused_ssid(meraki_net):
             break #Stop at the First SSID Unused
             
     return ssid_num, ssid_state
+
+def get_used_ssid_by_name(meraki_net, ssid_name):
+    ssid_num = -1
+    api_uri = f"/v1/networks/{meraki_net}/wireless/ssids"
+    data = get_meraki_api_data(api_uri)
+    for ssid in data:
+        current_label = str(ssid["name"]).strip() # Extract the First Word of the SSID Label
+        if ssid_name in [current_label]:
+            ssid_num = ssid["number"]
+            break #Stop at the First SSID Unused
+            
+    return ssid_num    
 
 def generate_preshare_key(size_of_psk=16):
     """
