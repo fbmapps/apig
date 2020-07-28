@@ -102,6 +102,42 @@ class APIGWMerakiWorker:
         message += f"Total: **{device_counter}**  \n"        
         return message
 
+    def show_meraki_ports(self, job_req):
+        """
+        Retrieve all Ports from a Switch
+        """
+        logger.info("Job Received : %s", job_req)
+        devicon = chr(0x2757) + chr(0xFE0F)
+        message = ""
+        job_params = job_req.split()
+        if len(job_params) < 2:
+            #Not Enough info provided
+            message = f" Job Request is incomplete, please provide Switch IP _show-meraki-ports 1.1.1.1_ \n"
+        else:
+            ## STEP 0-1: Assign all the parameters to job variables
+            ip_addr = job_params[1]
+            serial_id = get_switch_serial(ip_addr, self.meraki_net)
+            if serial_id in [""]:
+                message = f"{devicon} **There is not switch with that IP**"
+                logger.error("VALIDATION failed Switch serial not Found %s", ip_addr)
+                return message
+            else:
+                logger.info("VALIDATION Succeeded Switch serial Found %s", serial_id)
+
+        # STEP 1 - Retrieve Data    
+        api_uri = f"/v1/devices/{serial_id}/switch/ports/"
+        data = get_meraki_api_data(api_uri)
+        port_counter = 0
+        message = "Here is the detail:  \n"
+        for port in data:
+            message += f"* Port **{port['portId']}** |  Type : **{port['type']}** | VLAN: **{port['vlan']}** | VoiceVlan **{port['voiceVlan']}**  \n"
+            port_counter += 1
+        message += f"Total Ports: **{port_counter}**  \n"
+        return message
+
+
+
+
     def show_meraki_ssid(self, job_req):
         """
         Show All enabled and named SSID

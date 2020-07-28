@@ -208,7 +208,12 @@ def apigw_actions_builder(dispatcher, requestor_name):
                 "remove-meraki-ssid",
                 "Parameters: Remove and Disable a SSIDs by name or Number ID ie _remove-meraki-ssid <SSID NAME> | <SSID NUMBER 1 to 15>_",
                 mki.remove_ssid
-                )         
+                )   
+        dispatcher.add_action(
+                "show-meraki-ports",
+                "Parameters: Display All Ports in a Switch _show-meraki-ports <Switch IP>_",
+                mki.show_meraki_ports
+                )                
 
 
     # Sample Service
