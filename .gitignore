@@ -10,3 +10,6 @@ __pycache__
 
 # ENV Var
 .env
+
+# Allowed Emails File
+allowed_users.yaml

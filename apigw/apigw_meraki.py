@@ -75,12 +75,15 @@ class APIGWMerakiWorker:
         api_uri = f"/v1/networks/{self.meraki_net}/appliance/vlans"
         data = get_meraki_api_data(api_uri)
         # Parse the JSON
+        check_icon = chr(0x2705)
+        vlan_count = 0
         message = f"There are {len(data)} vlans in the Network. Details:  \n"
         for vlan in data:
             message += f"* **{vlan['name']}** |  ID: **{vlan['id']}** | Subnet: **{vlan['subnet']}**  \n"
-
+            vlan_count += 1
+        message += f" {check_icon} Total: **{vlan_count}**  \n" 
         return message
-
+        
     def show_meraki_switch(self, job_req):
         """
         Show All Switches Associated to Meraki Network
@@ -94,13 +97,35 @@ class APIGWMerakiWorker:
         # Parse the JSON
         message = "Here is the detail:  \n"
         device_counter = 0
+        check_icon = chr(0x2705)
         for device in data:
             device_type = decode_meraki_model(device["model"])
             if "switch" in device_type:
                 message += f"* **{device['name']}** |  IP: **{device['lanIp']}** | Serial: **{device['serial']}**  \n"
                 device_counter += 1
-        message += f"Total: **{device_counter}**  \n"        
+        message += f"{check_icon} Total: **{device_counter}**  \n"        
         return message
+
+    def show_meraki_mx_ports(self, job_req):
+        """
+        Show Ports Associated to MX Meraki Device
+        job_req: Message from Dispatcher, parse the request
+        device_type = mx, ms, mv, mr, mc, wireless, switch, appliance
+        return a message
+        API V1
+        """
+        logger.info("Job Received : %s", job_req)
+        api_uri = f"/v1/networks/{self.meraki_net}/appliance/ports"
+        data = get_meraki_api_data(api_uri)
+        # Parse the JSON
+        message = "Here is the detail:  \n"
+        port_counter = 0
+        check_icon = chr(0x2705)
+        for mx_port in data:
+            message += f"* **{mx_port['number']}** |  Port Mode: **{mx_port['type']}** | Vlan ID: **{mx_port['vlan']}**  \n"
+            port_counter += 1
+        message += f"{check_icon} Total: **{port_counter}**  \n"        
+        return message    
 
     def show_meraki_ports(self, job_req):
         """
@@ -108,6 +133,7 @@ class APIGWMerakiWorker:
         """
         logger.info("Job Received : %s", job_req)
         devicon = chr(0x2757) + chr(0xFE0F)
+        check_icon = chr(0x2705)
         message = ""
         job_params = job_req.split()
         if len(job_params) < 2:
@@ -132,11 +158,8 @@ class APIGWMerakiWorker:
         for port in data:
             message += f"* Port **{port['portId']}** |  Type : **{port['type']}** | VLAN: **{port['vlan']}** | VoiceVlan **{port['voiceVlan']}**  \n"
             port_counter += 1
-        message += f"Total Ports: **{port_counter}**  \n"
+        message += f"{check_icon} Total Ports: **{port_counter}**  \n"
         return message
-
-
-
 
     def show_meraki_ssid(self, job_req):
         """
@@ -151,6 +174,7 @@ class APIGWMerakiWorker:
         message = "Here is the detail:  \n"
         configured_ssid_counter = 0
         unused_ssid_counter = 0
+        check_icon = chr(0x2705)
         for ssid in data:
             # Find Enabled SSID first
             if ssid["enabled"]:
@@ -166,7 +190,7 @@ class APIGWMerakiWorker:
                 # All the Unconfigured SSIDs
                 unused_ssid_counter += 1
 
-        message += f"Total: Configured **{configured_ssid_counter}** Unused **{unused_ssid_counter - configured_ssid_counter }**  \n"
+        message += f"{check_icon} Total: Configured **{configured_ssid_counter}** Unused **{unused_ssid_counter - configured_ssid_counter }**  \n"
         return message        
 
     def change_port_vlan(self, job_req):
@@ -184,6 +208,7 @@ class APIGWMerakiWorker:
         #job_params[2]: Port Number
         #job_params[3]: Vlan ID
         devicon = chr(0x2757) + chr(0xFE0F)
+        check_icon = chr(0x2705)
         job_params = job_req.split()
         if len(job_params) < 4:
             #Not Enough info provided
@@ -233,7 +258,7 @@ class APIGWMerakiWorker:
             data = update_via_meraki_api(api_uri, port_payload)
             if data:
                 logger.info("Port updated successfully job_owner %s : ", self.job_owner)
-                message = "**Port Update has been applied Sucesfully**  \n"
+                message = f" {check_icon} **Port Update has been applied Sucesfully**  \n"
                 message += F"* Job Owner: **{self.job_owner}**  \n"
                 message += f"* PortID **{data['portId']}**  \n"
                 message += f"* Port Name **{data['name']}**  \n"
@@ -254,6 +279,7 @@ class APIGWMerakiWorker:
         """
         message = ""
         devicon = chr(0x2757) + chr(0xFE0F)
+        check_icon = chr(0x2705)
         # STEP-0 Extract parameters from job_req
         job_params = job_req.split(" ", 1)
         ## job_params[0] = Bot Command
@@ -289,7 +315,7 @@ class APIGWMerakiWorker:
             data = update_via_meraki_api(api_uri, ssid_payload)
             if data:
                 logger.info("SSID Activation succeeded for job_owner %s : ", self.job_owner)
-                message = "**SSID Activation has been applied sucesfully**  \n"
+                message = f" {check_icon} **SSID Activation has been applied sucesfully**  \n"
                 message += F"* Job Owner: **{self.job_owner}**  \n"
                 message += f"* SSID Number **{data['number']}**  \n"
                 message += f"* SSID Name **{data['name']}**  \n"
@@ -311,6 +337,7 @@ class APIGWMerakiWorker:
         """
         message = ""
         devicon = chr(0x2757) + chr(0xFE0F)
+        check_icon = chr(0x2705)
         # STEP-0 Extract parameters from job_req
         job_params = job_req.split(" ", 1)
         ## job_params[0] = Bot Command
@@ -345,7 +372,7 @@ class APIGWMerakiWorker:
             data = update_via_meraki_api(api_uri, ssid_payload)
             if data:
                 logger.info("SSID removal succeeded for job_owner %s : ", self.job_owner)
-                message = "**SSID Deactivationn has been completed sucesfully**  \n"
+                message = f"{check_icon} **SSID Deactivationn has been completed sucesfully**  \n"
                 message += F"* Job Owner: **{self.job_owner}**  \n"
                 message += f"* SSID Number **{data['number']}**  \n"
                 message += f"* SSID Name **{data['name']}**  \n"

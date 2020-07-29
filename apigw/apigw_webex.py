@@ -13,6 +13,7 @@ __license__ = "MIT"
 # ==== Libraries ====
 import os
 import logging
+import yaml
 from webexteamssdk import WebexTeamsAPI, WebhookEvent, ApiError
 # ==== Custom APIGW Libraries ====
 from apigw.apigw_dispatcher import APIGWDispatcher
@@ -31,11 +32,20 @@ def apigw_webex_listener(payload):
     logger.info("Incoming Message from Webex Teams")
 
     # Validate if Callback is from a valid Webex Team Space
+    #### BEST PRACTICE FOR Allow Only Traffic of Interest
     source_room = payload["data"]["roomId"]
-
-    if not apigw_check_source_room(source_room):
+    if not check_source_room(source_room):
         response = {"status_code": 400, "status_info": "No a Valid Room"}
         return response
+
+    #Retrieve the person Email for Requestor Validation
+     #### BEST PRACTICE FOR Allow Only Traffic of Interest
+    requestor_email = payload["data"]["personEmail"]
+    if not check_requestor_email(requestor_email):
+        logger.info("Person is not allowed: %s ", requestor_email)
+        response = {"status_code": 400, "status_info": "User is not in Allowance List"}
+        return response    
+    logger.info("Person is in allowance list: %s ", requestor_email)    
 
     # If Room is a valid source, then Instatiate the APIG Create all the Objects
     webex_bot = WebexTeamsAPI()
@@ -52,10 +62,11 @@ def apigw_webex_listener(payload):
     out_msg = ""
 
     # Verify is message arrive from a valid Organization
+     #### BEST PRACTICE FOR Allow Only Traffic of Interest
     if check_orgid_origin(requestor_orgid):
-        logger.info("Message is valid from allowed Org")
+        logger.info("Organization is allowed")
     else:
-        logger.info("Organization is not Allowed")
+        logger.info("Organization is not allowed")
         response = {"status_code": 400, "status_info": "Organization is not Allowed"}
         return response
 
@@ -107,7 +118,9 @@ def apigw_webex_listener(payload):
     return response
 
 # ====== Helpers Functions ==========
-def apigw_check_source_room(room_id):
+
+## ========= SECURITY CHECK FUNCTIONS ============
+def check_source_room(room_id):
     """
     Helper Function to validate if Space is One:One or Group
     Return True/False
@@ -118,21 +131,6 @@ def apigw_check_source_room(room_id):
     if room_id in (direct_room, group_room):
         check = True
     return check
-
-def apigw_send_message(webex_bot, room_id, message, card=None):
-    """
-    DRY for Message delivery
-    """
-    delivery_status = False
-    try:
-        if card is None:
-            webex_bot.messages.create(room_id, markdown=message)
-        else:
-            webex_bot.messages.create(room_id, text=message, atachments=card)
-        delivery_status = True
-    except ApiError:
-        delivery_status = False
-    return delivery_status
 
 def check_orgid_origin(msg_orgid):
     """
@@ -148,6 +146,23 @@ def check_orgid_origin(msg_orgid):
         comm_allowed = True
     return comm_allowed
 
+def check_requestor_email(person_email):
+    """
+    Check personEmail from the Job Requester from Webex
+    receive personEmail from webhook message
+    return: True/False
+    WEBEX BEST PRACTICE
+    /blog/building-a-more-secure-bot
+    """
+    comm_allowed = False
+    with open('allowed_users.yaml', 'r') as stream:
+        data = yaml.safe_load(stream)
+        if person_email in str(data["Allowed"]["email"]):
+            comm_allowed = True
+    return comm_allowed
+### =================== END OF SECURITY ===============
+
+## ====== General Purpuose Functions ========
 def get_health(message):
     """
     Simple Health Check
@@ -161,6 +176,21 @@ def get_health(message):
         health_check = " Webex Teams Comm is not working :("
     return health_check
 
+
+def apigw_send_message(webex_bot, room_id, message, card=None):
+    """
+    DRY for Message delivery
+    """
+    delivery_status = False
+    try:
+        if card is None:
+            webex_bot.messages.create(room_id, markdown=message)
+        else:
+            webex_bot.messages.create(room_id, text=message, atachments=card)
+        delivery_status = True
+    except ApiError:
+        delivery_status = False
+    return delivery_status
 def send_card(message):
     """
     Send an AdaptiveCard
@@ -199,7 +229,7 @@ def apigw_actions_builder(dispatcher, requestor_name):
         mki = APIGWMerakiWorker(requestor_name)
         dispatcher.add_action(
                 "show-meraki-network",
-                "Summery Info of Managed Meraki Network",
+                "Summary Info of Managed Meraki Network",
                 mki.show_meraki_network
                 )
         dispatcher.add_action(
@@ -214,7 +244,7 @@ def apigw_actions_builder(dispatcher, requestor_name):
                 )
         dispatcher.add_action(
                 "change-meraki-port",
-                "Parameters: Switch IP, Switch-Port, Vlan-ID ie _change-port-vlan 1.1.1.1 10 101",
+                "Parameters: Switch IP, Switch-Port, Vlan-ID ie _change-meraki-port-vlan 1.1.1.1 10 101",
                 mki.change_port_vlan
                 )
         dispatcher.add_action(
@@ -237,7 +267,11 @@ def apigw_actions_builder(dispatcher, requestor_name):
                 "Parameters: Display All Ports in a Switch _show-meraki-ports <Switch IP>_",
                 mki.show_meraki_ports
                 )                
-
+        dispatcher.add_action(
+                "show-meraki-mx-ports",
+                "Parameters: Display All Ports in a MX appliance _show-meraki-mx-ports_",
+                mki.show_meraki_mx_ports
+                ) 
 
     # Sample Service
     covid = CovidStats()

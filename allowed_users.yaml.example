@@ -1,0 +1,6 @@
+---
+Allowed:
+ email:
+  - user@email.com
+  - user2@email.com
+  - user3@email.com  
