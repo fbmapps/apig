@@ -491,6 +491,25 @@ def update_via_meraki_api(api_uri, payload):
         logger.info("Meraki PUT Operation failed : %s", make_update.status_code)
     return data
 
+def post_via_meraki_api(api_uri, payload):
+    """
+    PUT Task sended to Meraki
+    api_uri = resource endpoint
+    api_header = special header with api_key
+    payload = Data to Update, conforming API format 
+    """
+    url = API_URL + api_uri
+    post_data = json.dumps(payload)
+    make_post = requests.post(url, headers=api_headers, data=post_data, verify=False)
+    if make_post.status_code in [200, 201, 202, 203, 204]:
+        data = json.loads(make_update.text)
+        logger.info("Meraki POST operation suceeded : %s ", api_uri)
+    else:
+        data = {}
+        logger.info("Meraki POST Operation failed : %s", make_update.status_code)
+    return data
+
+
 # === Meraki Helpers Functions
 def decode_meraki_model(model):
     """
