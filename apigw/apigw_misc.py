@@ -49,13 +49,19 @@ class CovidStats:
         Get Latest Info about Covid
         """
         logger.info("Action Request from bot for COVID Data : %s", message)
+        # Icons Responses
+        fail_icon = chr(0x274c)
+        check_icon = chr(0x2705)
+        stats_icon = chr(0x1f4f6)
+        warn_icon = chr(0x2757)
+
         endpoint = "/summary"
         data = self.query_api(endpoint)
         datapoint = str(data["Global"]["NewConfirmed"])
         reply = "Here is the latest stats for COVID-19 from John Hopskins Data:  \n"
-        reply += f"* **{datapoint}** new confirmed cases   \n"
-        reply += f"* **{data['Global']['TotalDeaths']}** Deaths  \n"
-        reply += f"* **{data['Global']['TotalRecovered']}** recovered  \n"
-        reply += f"* **{data['Global']['TotalConfirmed']}** cases World-wide  \n"
+        reply += f"* {warn_icon} **{datapoint}** new confirmed cases   \n"
+        reply += f"* {fail_icon} **{data['Global']['TotalDeaths']:,}** Deaths  \n"
+        reply += f"* {check_icon} **{data['Global']['TotalRecovered']:,}** recovered  \n"
+        reply += f"* {stats_icon} **{data['Global']['TotalConfirmed']:,}** cases World-wide  \n"
     
         return reply

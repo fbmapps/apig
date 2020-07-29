@@ -47,8 +47,17 @@ def apigw_webex_listener(payload):
     in_msg = webex_bot.messages.get(webex_rx.data.id)
     in_person = webex_bot.people.get(in_msg.personId)
     requestor_name = in_person.displayName
+    requestor_orgid = in_person.orgId
     my_own = webex_bot.people.me()
     out_msg = ""
+
+    # Verify is message arrive from a valid Organization
+    if check_orgid_origin(requestor_orgid):
+        logger.info("Message is valid from allowed Org")
+    else:
+        logger.info("Organization is not Allowed")
+        response = {"status_code": 400, "status_info": "Organization is not Allowed"}
+        return response
 
     # Built the Actions Menu in the APIGWDispatcher
     logger.info("Preparing Actions Menu for APIGWDispatcher for Webex Teams Client for %s", requestor_name)
@@ -124,6 +133,20 @@ def apigw_send_message(webex_bot, room_id, message, card=None):
     except ApiError:
         delivery_status = False
     return delivery_status
+
+def check_orgid_origin(msg_orgid):
+    """
+    Check ORGID from the Job Requester from Webex
+    receive REQ_ORGID
+    return: True/False
+    WEBEX BEST PRACTICE
+    /blog/building-a-more-secure-bot
+    """
+    comm_allowed = False
+    bot_orgid = str(os.environ['WEBEX_ALLOWED_ORGANIZATION'])
+    if bot_orgid == msg_orgid:
+        comm_allowed = True
+    return comm_allowed
 
 def get_health(message):
     """
