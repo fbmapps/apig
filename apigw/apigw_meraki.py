@@ -83,7 +83,7 @@ class APIGWMerakiWorker:
             vlan_count += 1
         message += f" {check_icon} Total: **{vlan_count}**  \n" 
         return message
-        
+
     def show_meraki_switch(self, job_req):
         """
         Show All Switches Associated to Meraki Network
@@ -509,7 +509,6 @@ def generate_preshare_key(size_of_psk=16):
     preshare_key = ''.join(char_list)
 
     return preshare_key
-
 
 def validate_vlan(vlan_id, meraki_net):
     """
