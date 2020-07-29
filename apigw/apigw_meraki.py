@@ -251,6 +251,7 @@ class APIGWMerakiWorker:
             port_payload["tags"] = ["Changed","Automation", "WebexBot", "DevOps"]
             port_payload["vlan"] = vlan_id
             port_payload["type"] = "access"
+            port_payload["enabled"] = True
             logger.info("JSON Data to Port Update %s ", json.dumps(port_payload))
 
             # STEP 3: Send The Change to API
@@ -269,6 +270,68 @@ class APIGWMerakiWorker:
                 logger.error("Port update failed : ") 
                 message = f"{devicon} Port Update incomplete"
         return message 
+
+    def deactivate_port(self, job_req):
+        """
+        Change a Switch Port and assign a vlan
+        params:
+        job_req: Message from Dispatcher
+        return: Job Action Message
+        API V1
+        """
+        # STEP-0 Extract parameters from job_req
+        #job_params
+        #job_params[0]: Bot Command
+        #job_params[1]: Switch IP Address
+        #job_params[2]: Port Number
+        devicon = chr(0x2757) + chr(0xFE0F)
+        check_icon = chr(0x2705)
+        job_params = job_req.split()
+        if len(job_params) < 3:
+            #Not Enough info provided
+            message = f" Job Request is incomplete, please provide Switch IP, Switch-Port, Vlan-ID ie _change-port-vlan 1.1.1.1 10 101 \n"
+        else:
+            ## STEP 0-1: Assign all the parameters to job variables
+            ip_addr = job_params[1]
+            port_id = job_params[2]
+            # STEP 1: Validations
+            ## STEP 1-1: GET Switch Serial Number
+            serial_id = get_switch_serial(ip_addr, self.meraki_net)
+            if serial_id in [""]:
+                message = f"{devicon} **There is not switch with that IP**"
+                logger.error("VALIDATION failed Switch serial not Found %s", ip_addr)
+                return message
+            else:
+                logger.info("VALIDATION Succeeded Switch serial Found %s", serial_id)
+
+            ## STEP 1-2: Validate Port ID
+            if validate_port(port_id, serial_id):
+                logger.info("VALIDATION Succeeded Port ID Valid %s", port_id)
+            else:
+                logger.error("VALIDATION failed Port ID not Found %s", port_id)
+                message = f"{devicon} **Invalid Port ID**"
+                return message
+
+            # STEP 2: Prepare the Payload
+            port_payload = {}
+            port_payload["name"] = f"Port disabled by {self.job_owner} via Teams"
+            port_payload["enabled"] = False
+            logger.info("JSON Data to Port Update %s ", json.dumps(port_payload))
+
+            # STEP 3: Send The Change to API
+            api_uri = f"/v1/devices/{serial_id}/switch/ports/{int(port_id)}"
+            data = update_via_meraki_api(api_uri, port_payload)
+            if data:
+                logger.info("Port updated successfully job_owner %s : ", self.job_owner)
+                message = f" {check_icon} **Port Update has been applied Sucesfully**  \n"
+                message += F"* Job Owner: **{self.job_owner}**  \n"
+                message += f"* PortID **{data['portId']}**  \n"
+                message += f"* Port Name **{data['name']}**  \n"
+                message += f"* Port Type **{data['enabled']}**  \n"
+            else:                
+                logger.error("Port update failed : ") 
+                message = f"{devicon} Port Update incomplete"
+        return message
 
     def activate_new_ssid(self, job_req):
         """
@@ -358,7 +421,7 @@ class APIGWMerakiWorker:
                 # The Job Owner pass a name so a ssid_number should be retrieve
                 ssid_name = str(job_params[1]).strip()
                 ssid_num = get_used_ssid_by_name(self.meraki_net, ssid_name)
-                logger.info("VALIDATION succeeded SSID number %s for % ", str(ssid_num) , ssid_name)
+                logger.info("VALIDATION succeeded SSID number %s for %s ", str(ssid_num) , ssid_name)
 
             # STEP 2 - Prepare Payload:
             ssid_payload = {}
@@ -372,7 +435,7 @@ class APIGWMerakiWorker:
             data = update_via_meraki_api(api_uri, ssid_payload)
             if data:
                 logger.info("SSID removal succeeded for job_owner %s : ", self.job_owner)
-                message = f"{check_icon} **SSID Deactivationn has been completed sucesfully**  \n"
+                message = f"{check_icon} **SSID Deactivation has been completed sucesfully**  \n"
                 message += F"* Job Owner: **{self.job_owner}**  \n"
                 message += f"* SSID Number **{data['number']}**  \n"
                 message += f"* SSID Name **{data['name']}**  \n"

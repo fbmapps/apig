@@ -228,50 +228,55 @@ def apigw_actions_builder(dispatcher, requestor_name):
     if meraki_api_enable():
         mki = APIGWMerakiWorker(requestor_name)
         dispatcher.add_action(
-                "show-meraki-network",
+                "show-network",
                 "Summary Info of Managed Meraki Network",
                 mki.show_meraki_network
                 )
         dispatcher.add_action(
-                "show-meraki-vlans",
+                "show-vlans",
                 "Display a List with the VLANS attached to the Meraki Network",
                 mki.show_meraki_vlans
                 )
         dispatcher.add_action(
-                "show-meraki-switch",
+                "show-switch",
                 "Display a List with the Switches attached to the Meraki Network",
                 mki.show_meraki_switch
                 )
         dispatcher.add_action(
-                "change-meraki-port",
-                "Parameters: Switch IP, Switch-Port, Vlan-ID ie _change-meraki-port-vlan 1.1.1.1 10 101",
+                "change-port",
+                "Parameters: Switch IP, Switch-Port, Vlan-ID ie _change-port 1.1.1.1 10 101_",
                 mki.change_port_vlan
                 )
         dispatcher.add_action(
-                "activate-meraki-ssid",
-                "Parameters: SSID Name, ie _activate-meraki-ssid SSIDName_",
+                "activate-ssid",
+                "Parameters: SSID Name, ie _activate-ssid SSIDName_",
                 mki.activate_new_ssid
                 )        
         dispatcher.add_action(
-                "show-meraki-ssid",
+                "show-ssid",
                 "Parameters: Display a List of All Enabled SSIDs",
                 mki.show_meraki_ssid
                 ) 
         dispatcher.add_action(
-                "remove-meraki-ssid",
-                "Parameters: Remove and Disable a SSIDs by name or Number ID ie _remove-meraki-ssid <SSID NAME> | <SSID NUMBER 1 to 15>_",
+                "remove-ssid",
+                "Parameters: Remove and Disable a SSIDs by name or Number ID ie _remove-ssid <SSID NAME> | <SSID NUMBER 1 to 15>_",
                 mki.remove_ssid
                 )   
         dispatcher.add_action(
-                "show-meraki-ports",
-                "Parameters: Display All Ports in a Switch _show-meraki-ports <Switch IP>_",
+                "show-ports",
+                "Parameters: Display All Ports in a Switch _show-ports <Switch IP>_",
                 mki.show_meraki_ports
                 )                
         dispatcher.add_action(
-                "show-meraki-mx-ports",
-                "Parameters: Display All Ports in a MX appliance _show-meraki-mx-ports_",
+                "show-mx-ports",
+                "Parameters: Display All Ports in a MX appliance _show-mx-ports_",
                 mki.show_meraki_mx_ports
-                ) 
+                )
+        dispatcher.add_action(
+                "disable-port",
+                "Parameters: Deactivate Switch Port _diasble-port <IP_ADDR> <PORT_ID>_",
+                mki.deactivate_port
+                )          
 
     # Sample Service
     covid = CovidStats()
