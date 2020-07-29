@@ -54,7 +54,7 @@ class APIGWDispatcher:
             order_rx_msg += "Please, Let me check the actions available...  \n"
                            
         # Send the message
-        logger.info("Order Acknowledege sended")
+        logger.info("Order Acknowledege send")
         self.webex_bot.messages.create(room.id, markdown=order_rx_msg)
 
         # Extract the Action
