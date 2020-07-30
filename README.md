@@ -47,10 +47,9 @@ In order to control the conversation access of the Bot and its scope, then you c
 - __show-mx-ports__: Parameters: Display All Ports in a MX appliance show-mx-ports
 - __disable-port__: Parameters: Deactivate Switch Port diasble-port
 
-
 ## Configuration
 You can deploy the Flask Service behind a NGINX Reverse Proxy: This is a sample configuration
-`
+
     server_name <your-web-server>;
     root /usr/share/nginx/html/<your-web-server>/public_html;
 
@@ -63,7 +62,6 @@ You can deploy the Flask Service behind a NGINX Reverse Proxy: This is a sample 
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             client_max_body_size 5M;
     }
-`
 
 ## Docker
 This app can be deployed as a Docker container, but just deploying the docker-compose file.
