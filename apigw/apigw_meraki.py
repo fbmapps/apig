@@ -16,6 +16,7 @@ import json
 import logging
 import secrets
 import string
+import re
 import requests
 from requests.packages.urllib3.exceptions import InsecureRequestWarning
 # === Disable SSL Warnings ===
@@ -132,17 +133,17 @@ class APIGWMerakiWorker:
         Retrieve all Ports from a Switch
         """
         logger.info("Job Received : %s", job_req)
-        devicon = chr(0x2757) + chr(0xFE0F)
+        fails_icon = chr(0x2757) + chr(0xFE0F)
         check_icon = chr(0x2705)
         message = ""
         job_params = job_req.split()
         if len(job_params) < 2:
             #Not Enough info provided
-            message = f" Job Request is incomplete, please provide Switch IP _show-meraki-ports 1.1.1.1_ \n"
+            message = f" {fails_icon} Job Request is incomplete, please provide Switch IP _show-ports <SWITCH_IP>_ \n"
         else:
             ## STEP 0-1: Assign all the parameters to job variables
             ip_addr = job_params[1]
-            serial_id = get_switch_serial(ip_addr, self.meraki_net)
+            serial_id, switch_name = get_switch_serial(ip_addr, self.meraki_net)
             if serial_id in [""]:
                 message = f"{devicon} **There is not switch with that IP**"
                 logger.error("VALIDATION failed Switch serial not Found %s", ip_addr)
@@ -150,15 +151,15 @@ class APIGWMerakiWorker:
             else:
                 logger.info("VALIDATION Succeeded Switch serial Found %s", serial_id)
 
-        # STEP 1 - Retrieve Data    
-        api_uri = f"/v1/devices/{serial_id}/switch/ports/"
-        data = get_meraki_api_data(api_uri)
-        port_counter = 0
-        message = "Here is the detail:  \n"
-        for port in data:
-            message += f"* Port **{port['portId']}** |  Type : **{port['type']}** | VLAN: **{port['vlan']}** | VoiceVlan **{port['voiceVlan']}**  \n"
-            port_counter += 1
-        message += f"{check_icon} Total Ports: **{port_counter}**  \n"
+            # STEP 1 - Retrieve Data    
+            api_uri = f"/v1/devices/{serial_id}/switch/ports/"
+            data = get_meraki_api_data(api_uri)
+            port_counter = 0
+            message = f"Here is the detail for {switch_name}  \n"
+            for port in data:
+                message += f"* Port **{port['portId']}** |  Type : **{port['type']}** | VLAN: **{port['vlan']}** | VoiceVlan **{port['voiceVlan']}**  \n"
+                port_counter += 1
+            message += f"{check_icon} Total Ports: **{port_counter}**  \n"
         return message
 
     def show_meraki_ssid(self, job_req):
@@ -215,12 +216,14 @@ class APIGWMerakiWorker:
             message = f" Job Request is incomplete, please provide Switch IP, Switch-Port, Vlan-ID ie _change-port-vlan 1.1.1.1 10 101 \n"
         else:
             ## STEP 0-1: Assign all the parameters to job variables
-            ip_addr = job_params[1]
-            port_id = job_params[2]
-            vlan_id = job_params[3]
+            ip_addr = "".join(re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', job_params[1])) #Validate IP Addr. Format
+            port_id = "".join(re.findall(r'^\d{1,2}$',job_params[2])) # Accept upto 2 Digits
+            vlan_id = "".join(re.findall(r'^\d{1,4}$',job_params[3])) #Accept up to 4 Digits
+
+
             # STEP 1: Validations
             ## STEP 1-1: GET Switch Serial Number
-            serial_id = get_switch_serial(ip_addr, self.meraki_net)
+            serial_id, switch_name = get_switch_serial(ip_addr, self.meraki_net)
             if serial_id in [""]:
                 message = f"{devicon} **There is not switch with that IP**"
                 logger.error("VALIDATION failed Switch serial not Found %s", ip_addr)
@@ -261,6 +264,7 @@ class APIGWMerakiWorker:
                 logger.info("Port updated successfully job_owner %s : ", self.job_owner)
                 message = f" {check_icon} **Port Update has been applied Sucesfully**  \n"
                 message += F"* Job Owner: **{self.job_owner}**  \n"
+                message += F"* Switch Name: **{switch_name}**  \n"
                 message += f"* PortID **{data['portId']}**  \n"
                 message += f"* Port Name **{data['name']}**  \n"
                 message += f"* Port Type **{data['type']}**  \n"
@@ -292,11 +296,11 @@ class APIGWMerakiWorker:
             message = f" Job Request is incomplete, please provide Switch IP, Switch-Port, Vlan-ID ie _change-port-vlan 1.1.1.1 10 101 \n"
         else:
             ## STEP 0-1: Assign all the parameters to job variables
-            ip_addr = job_params[1]
-            port_id = job_params[2]
+            ip_addr = "".join(re.findall(r'\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}', job_params[1])) #Well Formed IP Address
+            port_id = "".join(re.findall(r'^\d{1,2}$',job_params[2])) #Accepting up to numbers
             # STEP 1: Validations
             ## STEP 1-1: GET Switch Serial Number
-            serial_id = get_switch_serial(ip_addr, self.meraki_net)
+            serial_id, switch_name = get_switch_serial(ip_addr, self.meraki_net)
             if serial_id in [""]:
                 message = f"{devicon} **There is not switch with that IP**"
                 logger.error("VALIDATION failed Switch serial not Found %s", ip_addr)
@@ -325,6 +329,7 @@ class APIGWMerakiWorker:
                 logger.info("Port updated successfully job_owner %s : ", self.job_owner)
                 message = f" {check_icon} **Port Update has been applied Sucesfully**  \n"
                 message += F"* Job Owner: **{self.job_owner}**  \n"
+                message += F"* Switch Name: **{switch_name}**  \n"
                 message += f"* PortID **{data['portId']}**  \n"
                 message += f"* Port Name **{data['name']}**  \n"
                 message += f"* Port Type **{data['enabled']}**  \n"
@@ -535,6 +540,7 @@ def get_switch_serial(ip_addr, meraki_net):
     Helper to Retrieve Switch Serial from IP
     params: IP Address, Meraki Network
     return: Serial
+    APIV1
     """
     serial_id = ""
     api_uri = f"/v1/networks/{meraki_net}/devices"
@@ -544,8 +550,9 @@ def get_switch_serial(ip_addr, meraki_net):
         if "switch" in device_type: 
             if ip_addr in device["lanIp"]:
                 serial_id = str(device["serial"]).strip()
+                switch_name = str(device["name"]).strip()
                 logger.info("Switch Found! Serial %s" , serial_id)            
-    return serial_id
+    return serial_id, switch_name
 
 def get_unused_ssid(meraki_net):
     ssid_num = -1

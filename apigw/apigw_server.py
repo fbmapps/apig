@@ -53,7 +53,7 @@ def flask_webex_bot():
     POST Calls Need To be signed by Webhook via PSK
     """
     payload = request.json
-    logger.info("Webex Team resource : %s " , payload['resource'])
+    logger.info("Webex Team contact received via POST")
 
     # SIGNATURE with SECRET Key from Webhook
     raw_payload = request.data # This is required as raw, to match the signed Payload
