@@ -155,9 +155,12 @@ class APIGWMerakiWorker:
             api_uri = f"/v1/devices/{serial_id}/switch/ports/"
             data = get_meraki_api_data(api_uri)
             port_counter = 0
-            message = f"Here is the detail for {switch_name}  \n"
+            message = f"Here is the detail for **{switch_name}**  \n"
             for port in data:
-                message += f"* Port **{port['portId']}** |  Type : **{port['type']}** | VLAN: **{port['vlan']}** | VoiceVlan **{port['voiceVlan']}**  \n"
+                if port["enabled"]:
+                    message += f"* {check_icon} Port **{port['portId']}** |  Type : **{port['type']}** | VLAN: **{port['vlan']}** | VoiceVlan **{port['voiceVlan']}** | Status: **Enabled**  \n"
+                else:
+                    message += f"* {fails_icon} Port **{port['portId']}** |  Type : **{port['type']}** | VLAN: **{port['vlan']}** | VoiceVlan **{port['voiceVlan']}** | Status: **Disabled**  \n"
                 port_counter += 1
             message += f"{check_icon} Total Ports: **{port_counter}**  \n"
         return message
