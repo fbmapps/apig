@@ -21,7 +21,7 @@ Once there you can create a Bot to obtain the following information:
 - __WEBEX_TEAMS_BOT_NAME__: Bot Name, defined when you create the BOT 
 ### Bot Scope
 In order to control the conversation access of the Bot and its scope, then you can retrieve the following parameters to attach the Bot to an specific Room
-- __WEBEX_TEAMS_DIRECT_ROOM__: Room for 1:1 Messagings
+- __WEBEX_TEAMS_DIRECT_ROOM__: Room for 1:1 messaging
 - __WEBEX_TEAMS_GROUP_ROOM__: Shared **spaces** where several user interact with the bot by calling it by name like @BotName
 ### Security Best Practices
 - __WEBEX_ALLOWED_ORGANIZATION__: You use this to filter which organization is able to interact with the Bot.
@@ -50,8 +50,8 @@ In order to control the conversation access of the Bot and its scope, then you c
 
 ## Configuration
 You can deploy the Flask Service behind a NGINX Reverse Proxy: This is a sample configuration
-
-`server_name <your-web-server>;
+`
+    server_name <your-web-server>;
     root /usr/share/nginx/html/<your-web-server>/public_html;
 
     location /apigw/ {
@@ -62,7 +62,8 @@ You can deploy the Flask Service behind a NGINX Reverse Proxy: This is a sample 
             proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             client_max_body_size 5M;
-    }`
+    }
+`
 
 ## Docker
 This app can be deployed as a Docker container, but just deploying the docker-compose file.
